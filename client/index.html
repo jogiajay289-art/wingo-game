@@ -1256,8 +1256,8 @@
                         window.location.hostname.startsWith('10.') ||
                         window.location.hostname.endsWith('.local');
        
-       // Robust API URL Configuration
-       const API_URL = 'https://web-production-fce23.up.railway.app';
+       // Dynamic API URL Configuration for Single-Link deployment
+       const API_URL = window.location.origin;
 
       let currentMode = '1Min'; // Default Mode
       
