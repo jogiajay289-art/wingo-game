@@ -1,0 +1,10 @@
+node_modules
+.env
+error_log.txt
+database/*.csv
+database/*.json
+!database/user_information.csv
+!database/settings.json
+*.zip
+*.bat
+deploy_tmp
