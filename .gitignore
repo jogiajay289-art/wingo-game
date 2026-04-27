@@ -1,0 +1,8 @@
+node_modules
+.DS_Store
+*.zip
+*.bat
+error_log.txt
+database/*.csv
+database/*.json
+database/*.txt
