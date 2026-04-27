@@ -269,9 +269,38 @@
       }
 
       /* Mobile optimization for Admin Tables */
-      @media screen and (max-width: 400px) {
-        .records-table th, .records-table td { padding: 10px 4px; font-size: 11px; }
-        .admin-stat-card { padding: 10px !important; }
+      @media screen and (max-width: 480px) {
+        .app-container { max-width: 100%; border-radius: 0; }
+        .header h1 { font-size: 18px; }
+        .balance-amount { font-size: 32px; }
+        .records-table th, .records-table td { padding: 12px 6px; font-size: 12px; }
+        .bet-amt-btn { padding: 8px 0; font-size: 12px; }
+        .color-btn { padding: 12px 0; font-size: 14px; }
+        .num-btn { font-size: 18px; }
+        .action-item { padding: 12px; }
+        .action-item .left { font-size: 14px; gap: 10px; }
+        .glass-card { padding: 16px; }
+        .modal-content { width: 95%; max-height: 90vh; }
+      }
+
+      @media screen and (max-width: 360px) {
+        .header h1 { font-size: 16px; }
+        .balance-amount { font-size: 28px; }
+        .number-grid { gap: 6px; }
+        .num-btn { font-size: 16px; }
+        .bet-colors { gap: 6px; }
+        .color-btn { font-size: 12px; }
+        .mode-pill { padding: 8px 4px; font-size: 10px; }
+      }
+
+      /* Fix for iOS bottom safe area */
+      @supports (padding-bottom: env(safe-area-inset-bottom)) {
+        .bottom-nav {
+          padding-bottom: calc(12px + env(safe-area-inset-bottom));
+        }
+        .app-container {
+          padding-bottom: calc(80px + env(safe-area-inset-bottom));
+        }
       }
     </style>
   </head>
