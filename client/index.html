@@ -3574,6 +3574,7 @@
               refreshAdminDashboard();
           }
       }
+      window.deleteRechargeRecord = deleteRechargeRecord;
 
       // ===== DELETE WITHDRAWAL RECORD (Admin - local only) =====
       async function deleteWithdrawRecord(recordId, userId, userName) {
@@ -3596,6 +3597,7 @@
           openAdminReportsModal('withdraw');
           refreshAdminDashboard();
       }
+      window.deleteWithdrawRecord = deleteWithdrawRecord;
 
       function approveRecharge(rechargeId, userId, amount) {
           if(!confirm(`Approve ₹${amount} for User ${userId}?`)) return;
