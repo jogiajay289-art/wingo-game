@@ -3471,6 +3471,7 @@
 
 
       async function handleAdminAction(id, type, status, userId, amount) {
+          console.log(`[AdminAction] Clicked: ${type} ${status} for ${userId} (${amount})`);
           if(!confirm(`Confirm ${status} for this request?`)) return;
           showToast('Updating...');
           
@@ -3486,9 +3487,11 @@
                   openAdminReportsModal(type);
                   refreshAdminDashboard();
                   return;
+              } else {
+                  throw new Error(data.error || 'Server returned error');
               }
           } catch(e) { 
-              console.warn("Backend action failed, falling back to Simulation Mode.");
+              console.warn("Backend action failed, falling back to Simulation Mode:", e);
           }
 
           // LOCAL SIMULATION FALLBACK
@@ -3506,8 +3509,8 @@
                           userBalance += amount;
                           showToast(`[Simulation] Added ₹${amount} to balance`);
                       } else if (type === 'withdraw') {
-                          userBalance -= amount;
-                          showToast(`[Simulation] Deducted ₹${amount} for Withdrawal`);
+                          // Note: For withdrawals, balance was already deducted on request
+                          showToast(`[Simulation] Withdrawal Approved`);
                       }
                       updateBalanceDisplay();
                   }
@@ -3517,6 +3520,7 @@
           openAdminReportsModal(type);
           refreshAdminDashboard();
       }
+      window.handleAdminAction = handleAdminAction;
 
 
 
