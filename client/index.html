@@ -3407,12 +3407,13 @@
                   </td>
                   <td style="font-weight: bold; color: var(--primary);">₹ ${r.amount}</td>
                   <td style="padding: 12px 8px;">
+                    <div style="display:flex; flex-direction:column; gap:6px;">
                     ${r.status === 'PENDING' 
-                      ? `<div style="display:flex; flex-direction:column; gap:6px;">
-                           <button class="btn btn-primary" style="padding: 6px; font-size: 10px; height: auto; background: var(--primary); color:#000; font-weight:800;" onclick="handleAdminAction('${r.id}', 'recharge', 'SUCCESS', '${r.userId}', ${r.amount})">Accept</button>
-                           <button class="btn btn-danger" style="padding: 6px; font-size: 10px; height: auto; font-weight:800;" onclick="handleAdminAction('${r.id}', 'recharge', 'FAILED', '${r.userId}', ${r.amount})">Reject</button>
-                         </div>` 
+                      ? `<button class="btn btn-primary" style="padding: 6px; font-size: 10px; height: auto; background: var(--primary); color:#000; font-weight:800;" onclick="handleAdminAction('${r.id}', 'recharge', 'SUCCESS', '${r.userId}', ${r.amount})">Accept</button>
+                         <button class="btn btn-danger" style="padding: 6px; font-size: 10px; height: auto; font-weight:800;" onclick="handleAdminAction('${r.id}', 'recharge', 'FAILED', '${r.userId}', ${r.amount})">Reject</button>` 
                       : `<span style="font-size: 10px; font-weight: bold; padding: 4px 8px; border-radius: 4px; background: rgba(255,255,255,0.05); color: ${r.status === 'SUCCESS' ? 'var(--primary)' : 'var(--color-red)'}">${r.status}</span>`}
+                    <button style="padding: 5px 8px; font-size: 10px; height: auto; font-weight:800; background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.4); border-radius: 6px; cursor:pointer;" onclick="deleteRechargeRecord('${r.id}', '${r.userId}', '${r.userName || r.userId}')">🗑️ Remove</button>
+                    </div>
                   </td>
                 </tr>
             `).join('');
@@ -3426,12 +3427,13 @@
                   </td>
                   <td style="font-weight: bold; color: var(--color-red);">₹ ${w.amount}</td>
                   <td style="padding: 12px 8px;">
+                    <div style="display:flex; flex-direction:column; gap:6px;">
                     ${w.status === 'PENDING' 
-                      ? `<div style="display:flex; flex-direction:column; gap:6px;">
-                           <button class="btn btn-primary" style="padding: 6px; font-size: 10px; height: auto; background: var(--primary); color:#000; font-weight:800;" onclick="handleAdminAction('${w.id}', 'withdraw', 'SUCCESS', '${w.userId}', ${w.amount})">Accept</button>
-                           <button class="btn btn-danger" style="padding: 6px; font-size: 10px; height: auto; font-weight:800;" onclick="handleAdminAction('${w.id}', 'withdraw', 'FAILED', '${w.userId}', ${w.amount})">Reject</button>
-                         </div>` 
+                      ? `<button class="btn btn-primary" style="padding: 6px; font-size: 10px; height: auto; background: var(--primary); color:#000; font-weight:800;" onclick="handleAdminAction('${w.id}', 'withdraw', 'SUCCESS', '${w.userId}', ${w.amount})">Accept</button>
+                         <button class="btn btn-danger" style="padding: 6px; font-size: 10px; height: auto; font-weight:800;" onclick="handleAdminAction('${w.id}', 'withdraw', 'FAILED', '${w.userId}', ${w.amount})">Reject</button>` 
                       : `<span style="font-size: 10px; font-weight: bold; padding: 4px 8px; border-radius: 4px; background: rgba(255,255,255,0.05); color: ${w.status === 'SUCCESS' ? 'var(--primary)' : 'var(--color-red)'}">${w.status}</span>`}
+                    <button style="padding: 5px 8px; font-size: 10px; height: auto; font-weight:800; background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.4); border-radius: 6px; cursor:pointer;" onclick="deleteWithdrawRecord('${w.id}', '${w.userId}', '${w.userName || w.userId}')">🗑️ Remove</button>
+                    </div>
                   </td>
                 </tr>
             `).join('');
@@ -3488,6 +3490,79 @@
       }
 
 
+
+      // ===== DELETE RECHARGE RECORD (Admin) =====
+      async function deleteRechargeRecord(recordId, userId, userName) {
+          const choice = confirm(`Kya aap sirf yeh ek entry delete karna chahte hain?\n\n"OK" = Sirf yeh 1 record delete karo\n"Cancel" = Poore user (${userName}) ke saare records delete karo`);
+          
+          let url;
+          let confirmMsg;
+          if (choice) {
+              // Delete only this record
+              url = `${API_URL}/api/admin/delete-recharge?id=${recordId}`;
+              confirmMsg = `Record ID: ${recordId} delete ho jayega. Confirm?`;
+          } else {
+              // Delete all records of this user
+              if (!confirm(`⚠️ WARNING: User "${userName}" (ID: ${userId}) ki POORI recharge history delete ho jayegi. Pakka?`)) return;
+              url = `${API_URL}/api/admin/delete-recharge?userId=${userId}`;
+              confirmMsg = null; // already confirmed above
+          }
+
+          if (choice && !confirm(confirmMsg)) return;
+
+          showToast('Deleting record...');
+          try {
+              const res = await fetch(url, { method: 'DELETE' });
+              const data = await res.json();
+              if (res.ok && data.success) {
+                  showToast(`✅ ${data.deletedCount} record(s) delete ho gaye!`);
+                  
+                  // Also clear from local storage fallback
+                  const localDB = JSON.parse(localStorage.getItem('local_recharge_db') || '[]');
+                  const filtered = choice 
+                      ? localDB.filter(r => r.id !== recordId)
+                      : localDB.filter(r => String(r.userId) !== String(userId));
+                  localStorage.setItem('local_recharge_db', JSON.stringify(filtered));
+                  
+                  openAdminReportsModal('recharge');
+                  refreshAdminDashboard();
+              } else {
+                  showToast(data.error || 'Delete failed', true);
+              }
+          } catch(e) {
+              // Offline fallback: delete from localStorage only
+              const localDB = JSON.parse(localStorage.getItem('local_recharge_db') || '[]');
+              const filtered = choice 
+                  ? localDB.filter(r => r.id !== recordId)
+                  : localDB.filter(r => String(r.userId) !== String(userId));
+              localStorage.setItem('local_recharge_db', JSON.stringify(filtered));
+              showToast('Record removed (local only — server offline)');
+              openAdminReportsModal('recharge');
+              refreshAdminDashboard();
+          }
+      }
+
+      // ===== DELETE WITHDRAWAL RECORD (Admin - local only) =====
+      async function deleteWithdrawRecord(recordId, userId, userName) {
+          const choice = confirm(`Kya aap sirf yeh ek entry delete karna chahte hain?\n\n"OK" = Sirf yeh 1 record\n"Cancel" = ${userName} ke saare records delete karo`);
+
+          if (!choice) {
+              if (!confirm(`⚠️ WARNING: User "${userName}" ke saare withdrawal records hata diye jayenge. Pakka?`)) return;
+          } else {
+              if (!confirm(`Record ID: ${recordId} delete hoga. Confirm?`)) return;
+          }
+
+          showToast('Deleting withdrawal record...');
+          // Local fallback
+          const localDB = JSON.parse(localStorage.getItem('local_withdraw_db') || '[]');
+          const filtered = choice
+              ? localDB.filter(r => r.id !== recordId)
+              : localDB.filter(r => String(r.userId) !== String(userId));
+          localStorage.setItem('local_withdraw_db', JSON.stringify(filtered));
+          showToast('✅ Withdrawal record removed (local)');
+          openAdminReportsModal('withdraw');
+          refreshAdminDashboard();
+      }
 
       function approveRecharge(rechargeId, userId, amount) {
           if(!confirm(`Approve ₹${amount} for User ${userId}?`)) return;

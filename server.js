@@ -678,6 +678,48 @@ app.post('/api/admin/update-transaction', (req, res) => {
     });
 });
 
+// Admin: Delete recharge record(s)
+// DELETE /api/admin/delete-recharge?id=REC123          -> deletes single record by ID
+// DELETE /api/admin/delete-recharge?userId=101         -> deletes ALL records for a user
+app.delete('/api/admin/delete-recharge', (req, res) => {
+    const { id, userId } = req.query;
+
+    if (!id && !userId) {
+        return res.status(400).json({ error: 'Provide id or userId to delete' });
+    }
+
+    fs.readFile(RECHARGES_FILE_PATH, 'utf8', (err, data) => {
+        if (err) return res.status(500).json({ error: 'Failed to read recharge file' });
+
+        const lines = data.replace(/\r/g, '').split('\n');
+        const header = lines[0];
+        const dataLines = lines.slice(1).filter(l => l.trim());
+
+        let deletedCount = 0;
+        const updatedLines = dataLines.filter(line => {
+            const parts = line.split(',');
+            const rowId = parts[0]?.trim();
+            const rowUserId = parts[1]?.trim();
+
+            if (id && rowId === id) { deletedCount++; return false; }
+            if (userId && rowUserId === userId) { deletedCount++; return false; }
+            return true;
+        });
+
+        if (deletedCount === 0) {
+            return res.status(404).json({ error: 'No matching records found' });
+        }
+
+        try {
+            fs.writeFileSync(RECHARGES_FILE_PATH, header + '\n' + updatedLines.join('\n') + (updatedLines.length ? '\n' : ''));
+            console.log(`[ADMIN DELETE] Removed ${deletedCount} recharge record(s). id=${id || 'N/A'} userId=${userId || 'N/A'}`);
+            res.status(200).json({ success: true, deletedCount });
+        } catch (writeErr) {
+            res.status(500).json({ error: 'Failed to write updated recharge file' });
+        }
+    });
+});
+
 // Admin API to get/set UPI ID
 app.get('/api/admin/upi', (req, res) => {
     try {
